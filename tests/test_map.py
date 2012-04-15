@@ -1,6 +1,3 @@
-from unittest.case import skip
-from mock import patch
-
 import sys
 
 if sys.version_info[:2] < (2, 7):
@@ -8,6 +5,7 @@ if sys.version_info[:2] < (2, 7):
 else:
     import unittest
 
+from mock import patch
 from votemapbf3.map import get_n_next_maps, get_n_random_maps
 
 

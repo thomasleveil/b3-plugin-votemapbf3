@@ -18,9 +18,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
+import sys, time
 
-from collections import Counter
-import time
+if sys.version_info[:2] < (2, 7):
+    from votemapbf3.util import Counter
+else:
+    from collections import Counter
+
 
 
 class VoteSession(object):

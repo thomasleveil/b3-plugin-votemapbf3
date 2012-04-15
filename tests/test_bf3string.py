@@ -6,8 +6,6 @@ if sys.version_info[:2] < (2, 7):
 else:
     import unittest
 
-from unittest.case import skipUnless
-
 
 class Test_padright(unittest.TestCase):
 
@@ -26,7 +24,7 @@ class Test_padright(unittest.TestCase):
         self.assertAlmostEqual(50, width(rjust('               ', 50)), delta=2)
         self.assertAlmostEqual(50, width(rjust('fqs 654651 sq1fqs ]@ /o', 50)), delta=2)
 
-    @skipUnless(__name__ == '__main__', "test requiring human verification")
+    @unittest.skipUnless(__name__ == '__main__', "test requiring human verification")
     def test_in_game(self):
         print """admin.say "%s | %s" all """ % (ljust('<[({ hello world ! })]>', 48), ljust('<[({ hello world ! })]>', 48))
         print """admin.say "%s | %s" all """ % (center('<[({ hello world ! })]>', 48), center('<[({ hello world ! })]>', 48))

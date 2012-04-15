@@ -51,6 +51,18 @@ Support is only provided on www.bigbrotherbot.net forums on the following topic 
 http://bit.ly/JhIPy2
 
 
+
+Changelog
+---------
+
+1.0
+  First release
+
+1.1
+  Python 2.6 compatibility
+
+
+
 Contrib
 -------
 

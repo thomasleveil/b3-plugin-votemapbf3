@@ -1,6 +1,6 @@
 from mock import Mock, call, patch
 import time
-from parsers.frostbite2.util import MapListBlock
+from b3.parsers.frostbite2.util import MapListBlock
 from tests import Bf3TestCase
 from b3.config import CfgConfigParser
 from votemapbf3 import VotemapPlugin
