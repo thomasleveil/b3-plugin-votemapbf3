@@ -29,6 +29,8 @@ from votemapbf3.map import get_n_next_maps, get_n_random_maps
 from votemapbf3.util import two_by_two
 from votemapbf3.bf3string import ljust
 
+from votemapbf3 import __version__ as plugin_version
+__version__ = plugin_version # we need this trick to have the publist plugin report the correct version to B3 master
 
 class VotemapPlugin(Plugin):
     def __init__(self, console, config=None):
