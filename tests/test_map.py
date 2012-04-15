@@ -8,7 +8,7 @@ if sys.version_info[:2] < (2, 7):
 else:
     import unittest
 
-from votemap.map import get_n_next_maps, get_n_random_maps
+from votemapbf3.map import get_n_next_maps, get_n_random_maps
 
 
 available_maps = ['A', 'B', 'C', 'D', 'B', 'E']
@@ -111,7 +111,7 @@ class Test_get_n_random_maps2(commonTestsMixin, unittest.TestCase):
         return get_n_random_maps(*args, **kwargs)
 
     def setUp(self):
-        self.shuffle_patcher = patch("votemap.map.shuffle")
+        self.shuffle_patcher = patch("votemapbf3.map.shuffle")
         self.shuffle_mock = self.shuffle_patcher.start()
 
     def tearDown(self):

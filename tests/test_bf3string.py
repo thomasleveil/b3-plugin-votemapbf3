@@ -1,5 +1,5 @@
 import sys
-from votemap.bf3string import width, ljust, center, rjust
+from votemapbf3.bf3string import width, ljust, center, rjust
 
 if sys.version_info[:2] < (2, 7):
     import unittest2 as unittest

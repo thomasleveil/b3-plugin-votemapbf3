@@ -28,6 +28,6 @@ B3_VERSION_REQUIRED = '1.8.2dev2'
 assert LooseVersion(b3_version) >= LooseVersion(
     B3_VERSION_REQUIRED), "The votemap plugin requires B3 v%s or later. You current version is %s" % (B3_VERSION_REQUIRED, b3_version)
 
-from plugin import VotemapPlugin as B3VotemapPlugin
+from plugin import VotemapPlugin
 
-VotemapPlugin = B3VotemapPlugin
+Votemapbf3Plugin = VotemapPlugin

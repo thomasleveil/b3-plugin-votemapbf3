@@ -4,8 +4,8 @@ import os
 from b3.config import CfgConfigParser
 
 from tests import Bf3TestCase
-from votemap import VotemapPlugin
-from votemap.map import get_n_next_maps, get_n_random_maps
+from votemapbf3 import VotemapPlugin
+from votemapbf3.map import get_n_next_maps, get_n_random_maps
 
 
 class ConfTestCase(Bf3TestCase):
@@ -20,7 +20,7 @@ class ConfTestCase(Bf3TestCase):
 class Test_default_conf(ConfTestCase):
     def setUp(self):
         ConfTestCase.setUp(self)
-        self.conf.load(os.path.join(os.path.dirname(__file__), '../extplugins/conf/plugin_votemap.ini'))
+        self.conf.load(os.path.join(os.path.dirname(__file__), '../extplugins/conf/plugin_votemapbf3.ini'))
         self.p.onLoadConfig()
 
     def test_command_cancelvote(self):

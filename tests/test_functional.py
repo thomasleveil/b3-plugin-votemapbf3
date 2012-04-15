@@ -3,7 +3,7 @@ import time
 from parsers.frostbite2.util import MapListBlock
 from tests import Bf3TestCase
 from b3.config import CfgConfigParser
-from votemap import VotemapPlugin
+from votemapbf3 import VotemapPlugin
 
 class Test_command_cancelvote(Bf3TestCase):
     def setUp(self):

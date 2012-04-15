@@ -4,8 +4,8 @@ from mock import Mock
 from b3.clients import Client
 from b3.config import CfgConfigParser
 from b3.plugins.admin import AdminPlugin
-from votemap import VotemapPlugin
-from votemap.vote import VoteSession
+from votemapbf3 import VotemapPlugin
+from votemapbf3.vote import VoteSession
 
 if sys.version_info[:2] < (2, 7):
     import unittest2 as unittest
@@ -17,7 +17,7 @@ class VoteSession_TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.config = CfgConfigParser()
-        cls.config.read(os.path.join(os.path.dirname(__file__), '../extplugins/conf/plugin_votemap.ini'))
+        cls.config.read(os.path.join(os.path.dirname(__file__), '../extplugins/conf/plugin_votemapbf3.ini'))
 
     def setUp(self):
         self.plugin = Mock(VotemapPlugin)

@@ -25,9 +25,9 @@ import b3
 from b3.functions import minutesStr
 from b3.plugin import Plugin
 from vote import VoteSession
-from votemap.map import get_n_next_maps, get_n_random_maps
-from votemap.util import two_by_two
-from votemap.bf3string import ljust
+from votemapbf3.map import get_n_next_maps, get_n_random_maps
+from votemapbf3.util import two_by_two
+from votemapbf3.bf3string import ljust
 
 
 class VotemapPlugin(Plugin):

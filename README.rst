@@ -17,11 +17,11 @@ Requirements
 Installation
 ------------
 
-- copy the votemap directory into b3/extplugins
-- copy the plugin_votemap.ini config file to your config folder
+- copy the votemapbf3 directory into b3/extplugins
+- copy the plugin_votemapbf3.ini config file to your config folder
 - add to the plugins section of your main b3 config file::
 
-  <plugin name="votemap" config="@b3/extplugins/conf/plugin_votemap.xml" />
+  <plugin name="votemapbf3" config="@b3/extplugins/conf/plugin_votemapbf3.ini" />
 
 
 Commands
