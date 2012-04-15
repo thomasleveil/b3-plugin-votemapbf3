@@ -7,6 +7,10 @@ Description
 
 This plugin brings new commands to B3 for allowing players to vote for the next map on Battlefield 3 servers.
 
+.. image:: http://i.imgur.com/Wvxwa.png
+   :alt: In-game screenshot
+   :target: http://imgur.com/Wvxwa
+
 
 Requirements
 ------------
