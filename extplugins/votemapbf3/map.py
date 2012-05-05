@@ -22,25 +22,50 @@
 """\
 Module implementing strategies for picking a given number of maps out of a set of available maps.
 
-Methods should return a list of indices for the list of available maps provided.
+Methods should return a MapListBlock object.
 
 """
 from collections import deque
 from random import shuffle
 
 
-def get_n_next_maps(available_maps, n, current_indice, ignored_indices=list()):
-    indices_after_current_one = deque(range(len(available_maps)))
-    indices_after_current_one.rotate(0 - (int(current_indice) + 1))
-    available_indices = [x for x in indices_after_current_one if x not in ignored_indices]
-    return available_indices[:n]
+'''
+all strategies are implemented as a function with parameters :
+available_maps, max_number_of_maps, current_map, ignored_maps=list()
+
+where
+- available_maps is a list of map
+- max_number_of_maps is a integer
+- current_map is a map
+- ignored_maps is a list of map
+
+given that map is a dict like : {'name', 'gamemode', 'num_of_rounds'}
+
+Strategies will try to provide at least 2 maps. If necessary by not ignoring the given ignored maps.
+'''
+
+def get_n_next_maps(available_maps, max_number_of_maps, current_map, ignored_maps=list()):
+    maps = deque(available_maps)
+    if current_map in maps:
+        while maps[0] != current_map:
+            maps.rotate(-1)
+        maps.rotate(-1)
+    maps_set = list()
+    for current_map in maps:
+        if current_map not in maps_set:
+            maps_set.append(current_map)
+    maps_to_ignore = list(ignored_maps)
+    while len(maps_set) > 2 and len(maps_to_ignore):
+        try:
+            target = maps_to_ignore.pop()
+            maps_set.remove(target)
+        except ValueError:
+            pass
+    return maps_set[:max_number_of_maps]
 
 
-def get_n_random_maps(available_maps, n, current_indice, ignored_indices=list()):
-    indices = range(len(available_maps))
-    shuffle(indices)
-    indices_after_current_one = deque(indices)
-    indices_after_current_one.rotate(0 - (int(current_indice) + 1))
-    available_indices = [x for x in indices_after_current_one if x not in ignored_indices]
-    return available_indices[:n]
+def get_n_random_maps(available_maps, max_number_of_maps, current_map, ignored_maps=list()):
+    maps = list(available_maps)
+    shuffle(maps)
+    return get_n_next_maps(maps, max_number_of_maps, current_map, ignored_maps)
 

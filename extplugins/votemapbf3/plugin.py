@@ -19,11 +19,15 @@
 #
 #
 import ConfigParser
+import os
+import re
 from threading import Timer
+import threading
 import time
 import b3
 from b3.functions import minutesStr
 from b3.plugin import Plugin
+from parsers.frostbite2.util import MapListBlock
 from vote import VoteSession
 from votemapbf3.map import get_n_next_maps, get_n_random_maps
 from votemapbf3.util import two_by_two
@@ -31,6 +35,20 @@ from votemapbf3.bf3string import ljust
 
 from votemapbf3 import __version__ as plugin_version
 __version__ = plugin_version # we need this trick to have the publist plugin report the correct version to B3 master
+
+
+GAME_MODES_SHORTNAMES = {
+    "ConquestLarge0": "ConqL",
+    "ConquestSmall0": "Conq",
+    "ConquestSmall1": "ConqA", # will be deprecated after BF3 server R20
+    "ConquestAssaultLarge0": "ConqAL",
+    "ConquestAssaultSmall0": "ConqA",
+    "ConquestAssaultSmall1": "ConqA2",
+    "RushLarge0": "Rush",
+    "SquadRush0": "SQRH",
+    "SquadDeathMatch0": "SQDM",
+    "TeamDeathMatch0": "TDM",
+    }
 
 class VotemapPlugin(Plugin):
     def __init__(self, console, config=None):
@@ -44,10 +62,13 @@ class VotemapPlugin(Plugin):
         self.exclude_current_map = None
         self.exclude_next_map = None
         self.map_options_pickup_strategy = None
+        self.map_options_source_file = None
 
         self.current_vote_session = None
         self.current_vote_session_timer = None
         self.last_vote_start_time = None
+
+        self.nextmap_timer = None
 
         Plugin.__init__(self, console, config)
 
@@ -67,6 +88,8 @@ class VotemapPlugin(Plugin):
         self._load_messages()
         self._load_preferences()
         self._load_preference_pickup_strategy()
+        self._load_preference_map_options_source()
+        self._init_nextmap_display_timer()
 
 
     def onStartup(self):
@@ -98,8 +121,13 @@ class VotemapPlugin(Plugin):
                 self.current_vote_session.removeVoter(event.client)
 
 
+    def enable(self):
+        Plugin.enable(self)
+        self._init_nextmap_display_timer()
+
     def disable(self):
         self.cancel_current_vote_session()
+        self._cancel_nextmap_display_timer()
         Plugin.disable(self)
 
 
@@ -180,20 +208,23 @@ class VotemapPlugin(Plugin):
                 return
 
         # get the maps to choose from
-        available_maps = self.console.getFullMapRotationList()
-        self.debug("maps from current rotation list : %s" % available_maps)
-        map_indices = self.console.write(('mapList.getMapIndices',))
-        excluded_indices = []
+        available_maps = self._getAvailableMaps()
+        self.debug("available maps : %s" % available_maps)
+        current_mapinfo = self._get_current_mapinfo()
+
+        excluded_maps = []
         if self.exclude_current_map:
-            excluded_indices.append(map_indices[0])
+            excluded_maps.append(current_mapinfo)
         if self.exclude_next_map:
-            excluded_indices.append(map_indices[1])
-        options = self.map_options_pickup_strategy(available_maps, self.number_of_vote_options, map_indices[0], excluded_indices)
+            excluded_maps.append(self._get_next_mapinfo())
+
+        options = self.map_options_pickup_strategy(available_maps, self.number_of_vote_options, current_mapinfo, excluded_maps)
 
         if len(options) >= 2:
             self.current_vote_session = VoteSession(self, self._adminPlugin, self._messages)
-            for i in options:
-                self.current_vote_session.addOption(i, self.console.getEasyName(available_maps[i]['name']))
+            for mapinfo in options:
+                mapinfo['label'] = self._make_map_label(mapinfo)
+                self.current_vote_session.addOption(mapinfo)
             self.current_vote_session.start()
 
             self.console.say(self.getMessage("vote_announcement_started"))
@@ -219,7 +250,8 @@ class VotemapPlugin(Plugin):
             winning_option = self.current_vote_session.getWinningOption(min_votes=self.vote_threshold)
             if winning_option:
                 self.last_vote_start_time = self.current_vote_session.getStartTime()
-                self.console.write(('mapList.setNextMapIndex', winning_option['map_id']))
+                self._set_next_map(winning_option['name'],  winning_option['gamemode'], winning_option['num_of_rounds'])
+                self.console.say(self.current_vote_session.getCurrentVotesAsTextLines())
                 self.console.say(self.getMessage("voteresult_map_chosen", {'map': winning_option['label']}))
                 self.console.saybig(self.getMessage("voteresult_map_chosen", {'map': winning_option['label']}))
                 self.current_vote_session = None
@@ -234,11 +266,13 @@ class VotemapPlugin(Plugin):
             self.__reset_current_vote_session()
             self.console.say(self.getMessage('vote_announcement_cancel'))
 
+
     def __reset_current_vote_session(self):
         self.current_vote_session = None
         if self.current_vote_session_timer:
             self.current_vote_session_timer.cancel()
             self.current_vote_session_timer = None
+
 
     def _registerCommands(self):
         if 'commands' in self.config.sections():
@@ -254,10 +288,12 @@ class VotemapPlugin(Plugin):
                 else:
                     self.warning("config defines unknown command '%s'" % cmd)
 
+
     def _load_messages(self):
         """ loads messages from config """
         if self.config.has_section('messages'):
             self._messages.update(dict(self.config.items('messages', raw=True)))
+
 
     def _load_default_messages(self):
         self._messages = {
@@ -275,14 +311,16 @@ class VotemapPlugin(Plugin):
             "v_feedback_no_vote_in_progress": "no vote in progress, type !votemap to request a vote",
             }
 
+
     def _load_preferences(self):
         self.vote_interval = self._load_preference(self.config.getint, 'vote_interval', 5)
-        self.nextmap_display_interval = self._load_preference(self.config.getint, 'nextmap_display_interval', 120)
+        self.nextmap_display_interval = self._load_preference(self.config.getint, 'nextmap_display_interval', 0)
         self.vote_duration = self._load_preference(self.config.getint, 'vote_duration', 4)
         self.vote_threshold = self._load_preference(self.config.getint, 'vote_threshold', 0)
         self.number_of_vote_options = self._load_preference(self.config.getint, 'number_of_vote_options', 4)
         self.exclude_current_map = self._load_preference(self.config.getboolean, 'exclude_current_map', True)
         self.exclude_next_map = self._load_preference(self.config.getboolean, 'exclude_next_map', True)
+
 
     def _load_preference_pickup_strategy(self):
         default_value = 'sequential'
@@ -306,6 +344,40 @@ class VotemapPlugin(Plugin):
             raise ValueError("unexpected value '%s' for the map pickup strategy" % value)
 
 
+    def _load_preference_map_options_source(self):
+        default_value = None
+        try:
+            file_path = self.config.getpath('preferences', "maplist_file")
+            if file_path:
+                basename = os.path.basename(file_path)
+                if basename == file_path and self.config.fileName:
+                    # no path specified, assume same path as plugin config file
+                    file_path = os.path.normpath(os.path.dirname(self.config.fileName) + '/' + basename)
+                if not os.path.exists(file_path):
+                    raise ValueError('"%s" cannot be found' % file_path)
+                elif not os.path.isfile(file_path):
+                    raise ValueError('"%s" is not a file' % file_path)
+                else:
+                    with open(file_path, mode='r') as f:
+                        f.read()
+        except ConfigParser.NoOptionError, err:
+            self.info("Cannot find config option preferences.maplist_file. Using server map rotation list instead")
+            file_path = default_value
+        except ValueError, err:
+            self.warning("invalid value for config option preferences.maplist_file. Using server map rotation list instead. %s" % err)
+            file_path = default_value
+        except Exception, err:
+            self.warning("error while reading config option preferences.maplist_file. Using server map rotation list instead. %r" % err)
+            file_path = default_value
+
+        if file_path:
+            self.info("maps will be picked up from %s" % file_path)
+            self.map_options_source_file = file_path
+        else:
+            self.info("maps will be picked up from the server rotation list")
+            self.map_options_source_file = None
+
+
     def _load_preference(self, getter_func, name, default_value=None):
         try:
             value = getter_func('preferences', name)
@@ -318,3 +390,105 @@ class VotemapPlugin(Plugin):
             value = default_value
         self.info("config option preferences.%s : %s" % (name, value))
         return value
+
+
+    def _read_maplist_file(self, filename):
+        """ open a file respecting the maplist file format as described in the official BF3 Server Administration
+        guide and return a MapListBlock object representing its content.
+        Able to exclude badly formatted lines.
+        """
+        re_valid_map_line = re.compile(r"^\s*(?P<map_info>[^#]\w+\s+\w+\s+\d+)\s*(?:#.*)?$")
+        valid_lines = []
+        with open(filename, mode='r') as f:
+            for raw_line in f:
+                match = re_valid_map_line.match(raw_line)
+                if match:
+                    valid_lines.append(match.group('map_info'))
+        self.debug("valid lines : \n%s" % '\n'.join(valid_lines))
+        maps = MapListBlock([len(valid_lines), 3] + re.sub('\s+', ' ', '   '.join(valid_lines)).split(' '))
+        return maps
+
+
+    def _getAvailableMaps(self):
+        """ return a MapListBlock object with all maps elegible as a vote option.
+        will take those maps either from the current server map rotation list or a file
+        depending on the plugin config.
+        """
+        if self.map_options_source_file:
+            try:
+                maps = self._read_maplist_file(self.map_options_source_file)
+                self.debug("maps from %s : %s" % (self.map_options_source_file, maps))
+            except Exception, err:
+                self.error("Failed to read maps from %s. %s" % (self.map_options_source_file, err))
+                maps =  self.console.getFullMapRotationList()
+                self.debug("maps from current rotation list : %s" % maps)
+        else:
+            maps = self.console.getFullMapRotationList()
+            self.debug("maps from current rotation list : %s" % maps)
+        return maps
+
+
+    def _get_current_mapinfo(self):
+        self.console.getServerInfo()
+        return {'name': self.console.game.mapName, 'gamemode': self.console.game.gameType, 'num_of_rounds': self.console.game.serverinfo["roundsTotal"]}
+
+
+    def _get_next_mapinfo(self):
+        maps = self.console.getFullMapRotationList()
+        if not len(maps):
+            return self._get_current_mapinfo()
+        else:
+            map_indices = self.console.write(('mapList.getMapIndices',))
+            nextmap_indice = int(map_indices[1])
+            try:
+                return maps[nextmap_indice]
+            except IndexError:
+                return maps[0]
+
+
+    def _set_next_map(self, map_id, gamemode, num_of_rounds):
+        map_info = {'name': map_id, 'gamemode': gamemode, 'num_of_rounds': num_of_rounds}
+        maps = list(self.console.getFullMapRotationList())
+        if map_info in maps:
+            # next map is already in server rotation list
+            map_indices = self.console.write(('mapList.getMapIndices',))
+            currentmap_indice = int(map_indices[0])
+            try:
+                indice_of_next_map = maps.index(map_info,currentmap_indice + 1)
+            except ValueError:
+                indice_of_next_map = maps.index(map_info, 0, currentmap_indice + 1)
+            self.console.write(('mapList.setNextMapIndex', indice_of_next_map))
+        else:
+            # add next map to server rotation list
+            self.console.write(('mapList.add', map_id, gamemode, num_of_rounds))
+            self.console.write(('mapList.setNextMapIndex', len(maps)))
+
+
+    def _make_map_label(self, mapinfo):
+        try:
+            gamemode_shortlabel = GAME_MODES_SHORTNAMES[mapinfo["gamemode"]]
+        except KeyError, err:
+            self.error(err)
+            gamemode_shortlabel = None
+        label = self.console.getEasyName(mapinfo['name'])
+        if gamemode_shortlabel:
+            label += " (" + gamemode_shortlabel + ")"
+        return label
+
+
+    def _display_nextmap(self):
+        self.console.say("nextmap: " + self.console.getNextMap())
+        if self.working:
+            self._init_nextmap_display_timer()
+
+    def _cancel_nextmap_display_timer(self):
+        if self.nextmap_timer:
+            self.nextmap_timer.cancel()
+
+    def _init_nextmap_display_timer(self):
+        self._cancel_nextmap_display_timer()
+        if self.nextmap_display_interval and self.nextmap_display_interval > 0:
+            self.nextmap_timer = threading.Timer(interval=self.nextmap_display_interval, function=self._display_nextmap)
+            self.nextmap_timer.start()
+
+

@@ -39,9 +39,17 @@ class VoteSession(object):
         self.ended = None
         self.messages = messages
 
-    def addOption(self, map_id, label):
+    def addOption(self, mapinfo):
         assert not self.start_time, "Cannot add option after vote session started"
-        self.options[str(len(self.options) + 1)] = {'map_id': map_id, 'label': label}
+        assert 'label' in mapinfo, "expecting a dict with key 'label'. %r" % mapinfo
+        assert 'name' in mapinfo, "expecting a dict with key 'name'. %r" % mapinfo
+        assert 'gamemode' in mapinfo, "expecting a dict with key 'gamemode'. %r" % mapinfo
+        assert 'num_of_rounds' in mapinfo, "expecting a dict with key 'num_of_rounds'. %r" % mapinfo
+        self.options[str(len(self.options) + 1)] = mapinfo
+
+    def addOptions(self, maps_info):
+        for map_info in maps_info:
+            self.addOption(map_info)
 
     def start(self):
         """starts the vote session and accepts vote casts"""
@@ -85,12 +93,13 @@ class VoteSession(object):
         return self.start_time
 
     def getCurrentVotesAsTextLines(self):
-        """return a list of lines of text representing the current counts for each option as a bar"""
-        lines = []
+        """return a text representing the current counts for each option"""
+        results = []
         counts = self.getCounts()
         for option_key in sorted(self.options):
-            lines.append(option_key + ": " + ("*" * counts[option_key]))
-        return lines
+            option = self.options[option_key]
+            results.append(option['label'] + ": %s" % counts[option_key])
+        return ', '.join(results)
 
     def getOptions(self):
         """return a list of (option_key, option_label)"""

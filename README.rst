@@ -66,6 +66,10 @@ Changelog
   - Fixes command error when the map rotation list is empty and using the !votemap command
   - Fixes bug that prevented default messages to be considered if not present in config
 
+1.2
+  - Add a new config option (maplist_file) to list the maps that can be voted in a text file
+  - Fixes nextmap_display_interval that was not working at all
+  - Maps options are now announced with their gamemode
 
 
 Contrib

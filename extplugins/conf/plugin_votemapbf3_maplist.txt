@@ -1,0 +1,19 @@
+# List of maps that can be voted
+# ==============================
+#
+# List one map per line with its gamemode and the number of round to be played as described in the
+# BF3 Server Administration guide from DICE.
+# Blank lines and lines starting with '#' will be ignored.
+# You can add a comment at the end of a line after the '#' character.
+#
+# Refer to the DICE BF3 Server Administration Guide for maps and gamemodes names.
+
+MP_001      SquadDeathMatch0    1   # Grand Bazaar
+MP_003      RushLarge0          2   # Teheran Highway
+MP_007      ConquestSmall0      2   # Caspian Border
+MP_011      ConquestSmall0      2   # Seine Crossing
+MP_012      ConquestSmall0      2   # Operation Firestorm
+MP_013      ConquestSmall0      2   # Damavand Peak
+MP_017      ConquestSmall0      2   # Noshahr Canals
+MP_018      ConquestSmall0      2   # Kharg Island
+MP_Subway   ConquestSmall0      2   # Operation Metro

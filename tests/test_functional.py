@@ -1,6 +1,9 @@
+import logging
+import os
 from mock import Mock, call, patch
 import time
-from mockito import mock as mockitomock, when, verify, any
+from mockito import when, verify
+import sys
 from b3.parsers.frostbite2.util import MapListBlock
 from tests import Bf3TestCase, Bf3MockitoTestCase
 from b3.config import CfgConfigParser
@@ -72,7 +75,32 @@ class Votesession_TestCase(Bf3TestCase):
         self.write_patcher.stop()
 
 
-class Test_command_votemap(Votesession_TestCase):
+class Votesession_mockito_TestCase(Bf3MockitoTestCase):
+
+    def setUp(self):
+        Bf3MockitoTestCase.setUp(self)
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString(self.__class__.CONFIG)
+        self.p = VotemapPlugin(self.console, self.conf)
+        self.p.onLoadConfig()
+        self.p.onStartup()
+
+        when(self.console).write(('mapList.list', 0)).thenReturn(['3', '3', 'MP_001', 'RushLarge0', '1', 'MP_003', 'ConquestSmall0', '2', 'MP_007', 'SquadDeathMatch0', '3'])
+        when(self.console).write(('mapList.getMapIndices',)).thenReturn(['0', '1'])
+        when(self.console).write(('serverInfo',)).thenReturn(['BigBrotherBot #2 (US)', '0', '16',
+                                              'ConquestSmall0', 'MP_001', '0', '1',
+                                              '2', '1', '1', '0', '', 'true', 'true', 'false', '1385628', '1372265',
+                                              '', '', '', 'NAm', 'dfw', 'US', 'false'])
+
+        logging.getLogger('output').setLevel(logging.NOTSET)
+
+    def tearDown(self):
+        Bf3MockitoTestCase.tearDown(self)
+        if hasattr(self.p, 'current_vote_session_timer') and self.p.current_vote_session_timer:
+            self.p.current_vote_session_timer.cancel()
+
+
+class Test_command_votemap(Votesession_mockito_TestCase):
     CONFIG = """\
 [commands]
 votemap: 0
@@ -80,7 +108,8 @@ votemap: 0
 
     def test_nominal(self):
         # GIVEN
-        self.console.say = Mock()
+        self.console.write = Mock(wraps=self.console.write, side_effect=lambda *args, **kwargs: sys.stdout.write("write: %s\n" % args))
+        self.console.say = Mock(wraps=self.console.say, side_effect=lambda *args, **kwargs: sys.stdout.write("say: %s\n" % args))
         self.joe.connects("joe")
 
         # WHEN
@@ -91,7 +120,7 @@ votemap: 0
         self.assertIsNotNone(self.p.current_vote_session)
         self.assertIsNotNone(self.p.current_vote_session_timer)
         self.console.say.assert_called_once_with('Type: /1, /2, ... in chat to vote for the next map')
-        self.console.write.assert_has_calls([])
+        verify(self.console).write(('admin.say', ' /1 Grand Bazaar (Rush)     | /2 Caspian Border (SQDM)', 'all'))
 
 
     def test_vote_cast(self):
@@ -104,7 +133,7 @@ votemap: 0
         self.joe.says('/1')
 
         # THEN
-        self.assertEqual(['You voted for map Tehran Highway'], self.joe.message_history)
+        self.assertEqual(['You voted for map Grand Bazaar (Rush)'], self.joe.message_history)
 
 
     def test_already_started(self):
@@ -163,12 +192,12 @@ votemap: 0
         time.sleep(.2)
 
         # THEN
-        self.console.say.assert_called_once_with('Voted map : Tehran Highway')
-        saybig_mock.assert_called_once_with('Voted map : Tehran Highway')
-        self.write_mock.assert_has_calls([call(('mapList.setNextMapIndex', 1))])
+        saybig_mock.assert_called_once_with('Voted map : Grand Bazaar (Rush)')
+        self.console.say.assert_called_with('Voted map : Grand Bazaar (Rush)')
+        verify(self.console).write(('mapList.setNextMapIndex', 0))
 
 
-class Test_command_v(Votesession_TestCase):
+class Test_command_v(Votesession_mockito_TestCase):
     CONFIG = """\
 [commands]
 votemap: 0
@@ -189,6 +218,7 @@ v: 0
 
     def test_nominal(self):
         # GIVEN
+        self.console.write = Mock(wraps=self.console.write, side_effect=lambda *args, **kwargs: sys.stdout.write("write: %s\n" % args))
         self.simon.connects("simon")
         self.simon.says('!votemap')
         self.assertEqual(['New vote session started'], self.simon.message_history)
@@ -197,40 +227,21 @@ v: 0
 
         # WHEN
         self.joe.connects("joe")
-        self.write_mock.reset_mock()
         self.joe.says('!v')
 
         # THEN
-        self.write_mock.assert_has_calls(
-            [call(('admin.say', ' /1 Tehran Highway            | /2 Caspian Border           ', 'player', 'joe')),
-             call(('admin.say', ' /3 Grand Bazaar              ', 'player', 'joe'))])
+        verify(self.console).write(('admin.say', ' /1 Grand Bazaar (Rush)     | /2 Caspian Border (SQDM)', 'player', 'joe'))
 
 
-class Test_votemap_cases(Bf3MockitoTestCase):
-
-    def setUp(self):
-        Bf3MockitoTestCase.setUp(self)
-        self.conf = CfgConfigParser()
-        self.conf.loadFromString(r"""
+class Test_votemap_cases(Votesession_mockito_TestCase):
+    CONFIG = """\
 [commands]
 votemap: 0
-v: 0
-        """)
-        self.p = VotemapPlugin(self.console, self.conf)
-        self.p.onLoadConfig()
-        self.p.onStartup()
-
-    def tearDown(self):
-        Bf3MockitoTestCase.tearDown(self)
-        if hasattr(self.p, 'current_vote_session_timer') and self.p.current_vote_session_timer:
-            self.p.current_vote_session_timer.cancel()
-
+"""
 
     def test_when_no_map_in_rotation_list(self):
         # GIVEN
-        # that the current map was the 5th one in the rotation list
-        when(self.console).write(('mapList.getMapIndices',)).thenReturn(['5', '6'])
-        # and that we cleared the map rotation list
+        # that we cleared the map rotation list
         when(self.console).write(('mapList.list', 0)).thenReturn(['0', '3'])
 
         # WHEN
@@ -242,5 +253,28 @@ v: 0
         self.assertIsNone(self.p.current_vote_session)
         self.assertIsNone(self.p.current_vote_session_timer)
 
-        verify(self.console).write(('mapList.list', 0))
-        verify(self.console).write(('mapList.getMapIndices',))
+        verify(self.console, atleast=1).write(('mapList.list', 0))
+
+
+
+class Test_votemap_taking_maps_from_file(Votesession_mockito_TestCase):
+    CONFIG = """\
+[commands]
+votemap: 0
+[preferences]
+maplist_file: %s
+""" % (os.path.dirname(__file__) + '/../extplugins/conf/plugin_votemapbf3_maplist.txt')
+
+    def test_taking_maps_from_file(self):
+        # GIVEN
+        when(self.console).write(('mapList.list', 0)).thenReturn(['0', '3'])
+        self.assertIsNotNone(self.p.map_options_source_file)
+
+        # WHEN
+        self.simon.connects("simon")
+        self.simon.says('!votemap')
+
+        # THEN
+        self.assertEqual(['New vote session started'], self.simon.message_history)
+        self.assertIsNotNone(self.p.current_vote_session)
+        self.assertIsNotNone(self.p.current_vote_session_timer)
