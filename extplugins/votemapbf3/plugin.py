@@ -63,6 +63,7 @@ class VotemapPlugin(Plugin):
         This is called after loadConfig(). Any plugin private variables loaded
         from the config need to be reset here.
         """
+        self._load_default_messages()
         self._load_messages()
         self._load_preferences()
         self._load_preference_pickup_strategy()
@@ -255,8 +256,10 @@ class VotemapPlugin(Plugin):
 
     def _load_messages(self):
         """ loads messages from config """
+        if self.config.has_section('messages'):
+            self._messages.update(dict(self.config.items('messages', raw=True)))
 
-        # default messages
+    def _load_default_messages(self):
         self._messages = {
             "vote_announcement_started": "Type: /1, /2, ... in chat to vote for the next map",
             "vote_announcement_cancel": "Vote canceled",
@@ -271,9 +274,6 @@ class VotemapPlugin(Plugin):
             "voteresult_map_chosen": "Voted map : %(map)s",
             "v_feedback_no_vote_in_progress": "no vote in progress, type !votemap to request a vote",
             }
-
-        if self.config.has_section('messages'):
-            self._messages.update(dict(self.config.items('messages', raw=True)))
 
     def _load_preferences(self):
         self.vote_interval = self._load_preference(self.config.getint, 'vote_interval', 5)
