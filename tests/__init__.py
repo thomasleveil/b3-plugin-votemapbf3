@@ -32,17 +32,14 @@ class Bf3TestCase(unittest.TestCase):
         # Update method says of FakeClient so it let the Bf3Parser fire the SAY event
         def says(self, msg):
             print "\n%s says \"%s\"" % (self.name, msg)
-            self.console.queueEvent(self.console.OnPlayerChat(action=None, data=(self.cid, msg)))
+            self.console.queueEvent(self.console.OnPlayerChat(action=None, data=(self.cid, msg, 'all')))
         FakeClient.says = says
 
 
     def setUp(self):
         # create a BF3 parser
         self.parser_conf = XmlConfigParser()
-        self.parser_conf.loadFromString("""
-                    <configuration>
-                    </configuration>
-                """)
+        self.parser_conf.loadFromString(r"""<configuration/>""")
         self.console = Bf3Parser(self.parser_conf)
         self.console.startup()
 
