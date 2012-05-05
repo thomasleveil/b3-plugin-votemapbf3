@@ -36,21 +36,6 @@ class VotemapPlugin(Plugin):
     def __init__(self, console, config=None):
         self._adminPlugin = None
 
-        # default messages
-        self._messages = {
-            "vote_announcement_started": "Type: /1, /2, ... in chat to vote for the next map",
-            "vote_announcement_cancel": "Vote canceled",
-            "votemap_feedback_interval_error": "Next map vote allowed in %(time)s",
-            "votemap_feedback_in_progress_error": "A vote is already in progress",
-            "votemap_feedback_success": "New vote session started",
-            "cancelvote_feedback_success": "Vote canceled",
-            "cancelvote_feedback_no_vote_in_progress": "There is no vote to cancel",
-            "votecast_feedback_success": "You voted for map %(map)s",
-            "voteresult_no_map_chosen": "No single map won the vote",
-            "voteresult_map_chosen": "Voted map : %(map)s",
-            "v_feedback_no_vote_in_progress": "no vote in progress, type !votemap to request a vote",
-            }
-
         self.vote_interval = None
         self.nextmap_display_interval = None
         self.vote_duration = None
@@ -61,6 +46,7 @@ class VotemapPlugin(Plugin):
         self.map_options_pickup_strategy = None
 
         self.current_vote_session = None
+        self.current_vote_session_timer = None
         self.last_vote_start_time = None
 
         Plugin.__init__(self, console, config)
@@ -194,28 +180,34 @@ class VotemapPlugin(Plugin):
 
         # get the maps to choose from
         available_maps = self.console.getFullMapRotationList()
+        self.debug("maps from current rotation list : %s" % available_maps)
         map_indices = self.console.write(('mapList.getMapIndices',))
         excluded_indices = []
         if self.exclude_current_map:
             excluded_indices.append(map_indices[0])
         if self.exclude_next_map:
             excluded_indices.append(map_indices[1])
-        options = get_n_next_maps(available_maps, self.number_of_vote_options, map_indices[0], excluded_indices)
+        options = self.map_options_pickup_strategy(available_maps, self.number_of_vote_options, map_indices[0], excluded_indices)
 
-        self.current_vote_session = VoteSession(self, self._adminPlugin, self._messages)
-        for i in options:
-            self.current_vote_session.addOption(i, self.console.getEasyName(available_maps[i]['name']))
-        self.current_vote_session.start()
+        if len(options) >= 2:
+            self.current_vote_session = VoteSession(self, self._adminPlugin, self._messages)
+            for i in options:
+                self.current_vote_session.addOption(i, self.console.getEasyName(available_maps[i]['name']))
+            self.current_vote_session.start()
 
-        self.console.say(self.getMessage("vote_announcement_started"))
-        time.sleep(.5)
-        self.announce_vote_options()
-        self.current_vote_session_timer = Timer(interval=self.vote_duration * 60,
-            function=self.stop_current_vote_session)
-        self.current_vote_session_timer.start()
+            self.console.say(self.getMessage("vote_announcement_started"))
+            time.sleep(.5)
+            self.announce_vote_options()
+            self.current_vote_session_timer = Timer(interval=self.vote_duration * 60,
+                function=self.stop_current_vote_session)
+            self.current_vote_session_timer.start()
 
-        if client:
-            client.message(self.getMessage('votemap_feedback_success'))
+            if client:
+                client.message(self.getMessage('votemap_feedback_success'))
+        else:
+            self.warning("cannot start a vote with less than 2 options")
+            if client:
+                client.message(self.getMessage('votemap_feedback_not_enough_maps'))
 
 
     def stop_current_vote_session(self):
@@ -263,6 +255,23 @@ class VotemapPlugin(Plugin):
 
     def _load_messages(self):
         """ loads messages from config """
+
+        # default messages
+        self._messages = {
+            "vote_announcement_started": "Type: /1, /2, ... in chat to vote for the next map",
+            "vote_announcement_cancel": "Vote canceled",
+            "votemap_feedback_interval_error": "Next map vote allowed in %(time)s",
+            "votemap_feedback_in_progress_error": "A vote is already in progress",
+            "votemap_feedback_not_enough_maps": "Not enough maps to vote for",
+            "votemap_feedback_success": "New vote session started",
+            "cancelvote_feedback_success": "Vote canceled",
+            "cancelvote_feedback_no_vote_in_progress": "There is no vote to cancel",
+            "votecast_feedback_success": "You voted for map %(map)s",
+            "voteresult_no_map_chosen": "No single map won the vote",
+            "voteresult_map_chosen": "Voted map : %(map)s",
+            "v_feedback_no_vote_in_progress": "no vote in progress, type !votemap to request a vote",
+            }
+
         if self.config.has_section('messages'):
             self._messages.update(dict(self.config.items('messages', raw=True)))
 

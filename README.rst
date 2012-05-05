@@ -61,6 +61,11 @@ Changelog
 1.1
   Python 2.6 compatibility
 
+1.1.1
+  - Fixes bug that made impossible to use the random strategy to pick the map options
+  - Fixes command error when the map rotation list is empty and using the !votemap command
+  - Fixes bug that prevented default messages to be considered if not present in config
+
 
 
 Contrib

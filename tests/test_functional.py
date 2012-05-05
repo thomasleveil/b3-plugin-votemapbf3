@@ -1,7 +1,8 @@
 from mock import Mock, call, patch
 import time
+from mockito import mock as mockitomock, when, verify, any
 from b3.parsers.frostbite2.util import MapListBlock
-from tests import Bf3TestCase
+from tests import Bf3TestCase, Bf3MockitoTestCase
 from b3.config import CfgConfigParser
 from votemapbf3 import VotemapPlugin
 
@@ -203,3 +204,43 @@ v: 0
         self.write_mock.assert_has_calls(
             [call(('admin.say', ' /1 Tehran Highway            | /2 Caspian Border           ', 'player', 'joe')),
              call(('admin.say', ' /3 Grand Bazaar              ', 'player', 'joe'))])
+
+
+class Test_votemap_cases(Bf3MockitoTestCase):
+
+    def setUp(self):
+        Bf3MockitoTestCase.setUp(self)
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString(r"""
+[commands]
+votemap: 0
+v: 0
+        """)
+        self.p = VotemapPlugin(self.console, self.conf)
+        self.p.onLoadConfig()
+        self.p.onStartup()
+
+    def tearDown(self):
+        Bf3MockitoTestCase.tearDown(self)
+        if hasattr(self.p, 'current_vote_session_timer') and self.p.current_vote_session_timer:
+            self.p.current_vote_session_timer.cancel()
+
+
+    def test_when_no_map_in_rotation_list(self):
+        # GIVEN
+        # that the current map was the 5th one in the rotation list
+        when(self.console).write(('mapList.getMapIndices',)).thenReturn(['5', '6'])
+        # and that we cleared the map rotation list
+        when(self.console).write(('mapList.list', 0)).thenReturn(['0', '3'])
+
+        # WHEN
+        self.simon.connects("simon")
+        self.simon.says('!votemap')
+
+        # THEN
+        self.assertEqual(['Not enough maps to vote for'], self.simon.message_history)
+        self.assertIsNone(self.p.current_vote_session)
+        self.assertIsNone(self.p.current_vote_session_timer)
+
+        verify(self.console).write(('mapList.list', 0))
+        verify(self.console).write(('mapList.getMapIndices',))
