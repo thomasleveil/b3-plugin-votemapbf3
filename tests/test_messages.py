@@ -24,7 +24,7 @@ messages_keys = (
     'v_feedback_no_vote_in_progress',
     )
 
-class ConfTestCase(Bf3TestCase):
+class Test_messages(Bf3TestCase):
     def setUp(self):
         Bf3TestCase.setUp(self)
         self.conf = CfgConfigParser()
@@ -39,7 +39,7 @@ class ConfTestCase(Bf3TestCase):
 [messages]
         """)
         # WHEN
-        self.p._load_messages()
+        self.p._load_default_messages()
         # THEN
         for msg_key in messages_keys:
             self.assertIn(msg_key, self.p._messages)
@@ -49,8 +49,8 @@ class ConfTestCase(Bf3TestCase):
     def test_default_config(self):
         # GIVEN
         self.conf.load(os.path.join(os.path.dirname(__file__), '../extplugins/conf/plugin_votemapbf3.ini'))
-        self.p._messages = {}
         # WHEN
+        self.p._messages = {}
         self.p._load_messages()
         # THEN
         for msg_key in messages_keys:
