@@ -1,5 +1,4 @@
 import sys
-import time
 
 if sys.version_info[:2] < (2, 7):
     import unittest2 as unittest
@@ -7,8 +6,7 @@ else:
     import unittest
 import logging
 from mock import Mock
-import mockito
-from mockito.mockito import when
+from mockito import when
 from b3 import TEAM_UNKNOWN
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient

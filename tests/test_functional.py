@@ -1,12 +1,12 @@
 import logging
 import os
-from mock import Mock, call, patch
-import time
-from mockito import when, verify
 import sys
+import time
+from mock import Mock, patch
+from mockito import when, verify
 from b3.parsers.frostbite2.util import MapListBlock
-from tests import Bf3TestCase, Bf3MockitoTestCase
 from b3.config import CfgConfigParser
+from tests import Bf3TestCase, Bf3MockitoTestCase
 from votemapbf3 import VotemapPlugin
 
 class Test_command_cancelvote(Bf3TestCase):

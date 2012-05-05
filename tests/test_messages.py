@@ -1,12 +1,10 @@
 # -*- encoding: utf-8 -*-
 import logging
 import os
-from mock import Mock
 from b3.config import CfgConfigParser
 
 from tests import Bf3TestCase
 from votemapbf3 import VotemapPlugin
-from votemapbf3.map import get_n_next_maps, get_n_random_maps
 
 
 messages_keys = (

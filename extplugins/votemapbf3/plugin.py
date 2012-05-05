@@ -27,7 +27,7 @@ import time
 import b3
 from b3.functions import minutesStr
 from b3.plugin import Plugin
-from parsers.frostbite2.util import MapListBlock
+from b3.parsers.frostbite2.util import MapListBlock
 from vote import VoteSession
 from votemapbf3.map import get_n_next_maps, get_n_random_maps
 from votemapbf3.util import two_by_two
