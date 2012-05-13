@@ -68,6 +68,27 @@ class Test_getOptions(VoteSession_TestCase):
         self.vs.addOption(mapinfo_teheran_highway)
         self.assertListEqual([('1', 'Grand Bazaar'), ('2', 'Teheran Highway')], self.vs.getOptions())
 
+    def test_options_order(self):
+        for i in range(14):
+            self.vs.addOption({'name': 'name_%s' % i, 'gamemode': 'gamemode', 'num_of_rounds': '2', 'label': 'label_%s' % i})
+        self.assertListEqual([
+            ('1', 'label_0'),
+            ('2', 'label_1'),
+            ('3', 'label_2'),
+            ('4', 'label_3'),
+            ('5', 'label_4'),
+            ('6', 'label_5'),
+            ('7', 'label_6'),
+            ('8', 'label_7'),
+            ('9', 'label_8'),
+            ('10', 'label_9'),
+            ('11', 'label_10'),
+            ('12', 'label_11'),
+            ('13', 'label_12'),
+            ('14', 'label_13'),
+        ], self.vs.getOptions())
+
+
 
 class Test_getCounts(VoteSession_TestCase):
     def test_no_vote(self):

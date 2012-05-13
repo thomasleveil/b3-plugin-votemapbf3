@@ -102,9 +102,9 @@ class VoteSession(object):
         return ', '.join(results)
 
     def getOptions(self):
-        """return a list of (option_key, option_label)"""
+        """return a list of (option_key, option_label) ordered by option_key"""
         options = []
-        for option_key in sorted(self.options):
+        for option_key in sorted(self.options, key=int):
             options.append((option_key, self.options[option_key]['label']))
         return options
 

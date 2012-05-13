@@ -71,6 +71,9 @@ Changelog
   - Fixes nextmap_display_interval that was not working at all
   - Maps options are now announced with their gamemode
 
+1.2.1
+  - Fixes bug where more than 10 vote options would not be sorted correctly before being displayed. See https://github.com/courgette/b3-plugin-votemapbf3/issues/1
+
 
 Contrib
 -------
