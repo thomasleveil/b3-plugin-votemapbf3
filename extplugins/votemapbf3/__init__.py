@@ -18,15 +18,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 __author__ = 'Courgette'
 
 from b3 import __version__ as b3_version
-from distutils.version import LooseVersion
+from b3.update import B3version
 
 B3_VERSION_REQUIRED = '1.8.2dev2'
-assert LooseVersion(b3_version) >= LooseVersion(
-    B3_VERSION_REQUIRED), "The votemap plugin requires B3 v%s or later. You current version is %s" % (B3_VERSION_REQUIRED, b3_version)
+assert B3version(b3_version) >= B3version(
+    B3_VERSION_REQUIRED), "The votemap plugin requires B3 %s or later. You current version is %s" % (B3_VERSION_REQUIRED, b3_version)
 
 from plugin import VotemapPlugin
 
