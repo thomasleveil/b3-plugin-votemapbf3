@@ -77,6 +77,9 @@ Changelog
 1.2.2
   - Fixes bug preventing the plugin to load with B3 1.8.2
 
+1.3
+  - (Ozon) add support for all gametypes brought with DLC
+
 
 Contrib
 -------

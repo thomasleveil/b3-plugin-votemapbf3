@@ -18,8 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 #
-__version__ = '1.2.2'
-__author__ = 'Courgette'
+__version__ = '1.3'
+__author__ = 'Courgette, ozon'
 
 from b3 import __version__ as b3_version
 from b3.update import B3version

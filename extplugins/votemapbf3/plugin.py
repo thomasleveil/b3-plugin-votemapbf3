@@ -48,6 +48,11 @@ GAME_MODES_SHORTNAMES = {
     "SquadRush0": "SQRH",
     "SquadDeathMatch0": "SQDM",
     "TeamDeathMatch0": "TDM",
+    "TeamDeathMatchC0": "TDM",
+    "GunMaster0": "GM",
+    "Domination0": "Domination",
+    "TankSuperiority0": "TS",
+    "Scavenger0": "Scavenger",
     }
 
 class VotemapPlugin(Plugin):
