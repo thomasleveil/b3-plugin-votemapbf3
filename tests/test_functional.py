@@ -6,7 +6,7 @@ from mock import Mock, patch
 from mockito import when, verify
 from b3.parsers.frostbite2.util import MapListBlock
 from b3.config import CfgConfigParser
-from tests import Bf3TestCase, Bf3MockitoTestCase
+from tests import Bf3TestCase
 from votemapbf3 import VotemapPlugin
 
 class Test_command_cancelvote(Bf3TestCase):
@@ -75,10 +75,10 @@ class Votesession_TestCase(Bf3TestCase):
         self.write_patcher.stop()
 
 
-class Votesession_mockito_TestCase(Bf3MockitoTestCase):
+class Votesession_mockito_TestCase(Bf3TestCase):
 
     def setUp(self):
-        Bf3MockitoTestCase.setUp(self)
+        Bf3TestCase.setUp(self)
         self.conf = CfgConfigParser()
         self.conf.loadFromString(self.__class__.CONFIG)
         self.p = VotemapPlugin(self.console, self.conf)
@@ -95,7 +95,7 @@ class Votesession_mockito_TestCase(Bf3MockitoTestCase):
         logging.getLogger('output').setLevel(logging.NOTSET)
 
     def tearDown(self):
-        Bf3MockitoTestCase.tearDown(self)
+        Bf3TestCase.tearDown(self)
         if hasattr(self.p, 'current_vote_session_timer') and self.p.current_vote_session_timer:
             self.p.current_vote_session_timer.cancel()
 
