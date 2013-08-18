@@ -12,6 +12,33 @@ from b3.config import XmlConfigParser
 from b3.fake import FakeClient
 from b3.parsers.bf3 import Bf3Parser
 from b3.plugins.admin import AdminPlugin
+from mockito import when
+from b3.update import B3version
+from b3 import __version__ as b3_version
+
+
+class logging_disabled(object):
+    """
+    context manager that temporarily disable logging.
+
+    USAGE:
+        with logging_disabled():
+            # do stuff
+    """
+    DISABLED = False
+
+    def __init__(self):
+        self.nested = logging_disabled.DISABLED
+
+    def __enter__(self):
+        if not self.nested:
+            logging.getLogger('output').propagate = False
+            logging_disabled.DISABLED = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.nested:
+            logging.getLogger('output').propagate = True
+            logging_disabled.DISABLED = False
 
 
 class Bf3_TestCase_mixin(unittest.TestCase):
@@ -60,24 +87,22 @@ class Bf3TestCase(Bf3_TestCase_mixin):
         self.console.write = Mock(name="write")
 
         # load the admin plugin
-        self.adminPlugin = AdminPlugin(self.console, '@b3/conf/plugin_admin.xml')
-        self.adminPlugin.onStartup()
+        if B3version(b3_version) >= B3version("1.10dev"):
+            admin_plugin_conf_file = '@b3/conf/plugin_admin.ini'
+        else:
+            admin_plugin_conf_file = '@b3/conf/plugin_admin.xml'
+        with logging_disabled():
+            self.adminPlugin = AdminPlugin(self.console, admin_plugin_conf_file)
+            self.adminPlugin.onStartup()
 
         # make sure the admin plugin obtained by other plugins is our admin plugin
-        def getPlugin(name):
-            if name == 'admin':
-                return self.adminPlugin
-            else:
-                return self.console.getPlugin(name)
-        self.console.getPlugin = getPlugin
+        when(self.console).getPlugin('admin').thenReturn(self.adminPlugin)
 
         # prepare a few players
         self.prepare_players()
 
-
     def tearDown(self):
         self.console.working = False
-
 
 
 class Bf3MockitoTestCase(Bf3_TestCase_mixin):
@@ -103,7 +128,6 @@ class Bf3MockitoTestCase(Bf3_TestCase_mixin):
 
         # prepare a few players
         self.prepare_players()
-
 
     def tearDown(self):
         self.console.working = False
