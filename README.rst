@@ -15,7 +15,7 @@ This plugin brings new commands to B3 for allowing players to vote for the next 
 Requirements
 ------------
 
-- This plugin only works for BF3 servers
+- This plugin only works for BF3 and BF4 servers
 - B3 v1.8.2dev2 or later
 
 Installation
@@ -79,6 +79,11 @@ Changelog
 
 1.3
   - (Ozon) add support for all gametypes brought with DLC
+
+1.4
+  - Add support for Battlefield 4
+
+
 
 
 Contrib

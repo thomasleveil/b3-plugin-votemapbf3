@@ -34,26 +34,38 @@ from votemapbf3.util import two_by_two
 from votemapbf3.bf3string import ljust
 
 from votemapbf3 import __version__ as plugin_version
-__version__ = plugin_version # we need this trick to have the publist plugin report the correct version to B3 master
+__version__ = plugin_version  # we need this trick to have the publist plugin report the correct version to B3 master
 
 
-GAME_MODES_SHORTNAMES = {
-    "ConquestLarge0": "ConqL",
-    "ConquestSmall0": "Conq",
-    "ConquestSmall1": "ConqA", # will be deprecated after BF3 server R20
-    "ConquestAssaultLarge0": "ConqAL",
-    "ConquestAssaultSmall0": "ConqA",
-    "ConquestAssaultSmall1": "ConqA2",
-    "RushLarge0": "Rush",
-    "SquadRush0": "SQRH",
-    "SquadDeathMatch0": "SQDM",
-    "TeamDeathMatch0": "TDM",
-    "TeamDeathMatchC0": "TDM",
-    "GunMaster0": "GM",
-    "Domination0": "Domination",
-    "TankSuperiority0": "TS",
-    "Scavenger0": "Scavenger",
+GAME_MODES_SHORTNAMES_BY_GAME = {
+    "bf3": {
+        "ConquestLarge0": "ConqL",
+        "ConquestSmall0": "Conq",
+        "ConquestSmall1": "ConqA", # will be deprecated after BF3 server R20
+        "ConquestAssaultLarge0": "ConqAL",
+        "ConquestAssaultSmall0": "ConqA",
+        "ConquestAssaultSmall1": "ConqA2",
+        "RushLarge0": "Rush",
+        "SquadRush0": "SQRH",
+        "SquadDeathMatch0": "SQDM",
+        "TeamDeathMatch0": "TDM",
+        "TeamDeathMatchC0": "TDM",
+        "GunMaster0": "GM",
+        "Domination0": "Domination",
+        "TankSuperiority0": "TS",
+        "Scavenger0": "Scavenger",
+    },
+    "bf4": {
+        "ConquestLarge0": "ConqL",
+        "ConquestSmall0": "Conq",
+        "Domination0": "Domination",
+        "Elimination0": "Defuse",
+        "Obliteration": "Obliteration",
+        "RushLarge0": "Rush",
+        "SquadDeathMatch0": "SQDM",
+        "TeamDeathMatch0": "TDM",
     }
+}
 
 class VotemapPlugin(Plugin):
     def __init__(self, console, config=None):
@@ -74,6 +86,7 @@ class VotemapPlugin(Plugin):
         self.last_vote_start_time = None
 
         self.nextmap_timer = None
+        self.game_modes_shortnames = {}
 
         Plugin.__init__(self, console, config)
 
@@ -101,6 +114,12 @@ class VotemapPlugin(Plugin):
         """\
         Initialize plugin settings
         """
+        try:
+            self.game_modes_shortnames = GAME_MODES_SHORTNAMES_BY_GAME[self.console.gameName]
+        except KeyError:
+            self.critical("unsupported game: %s" % self.console.gameName)
+            raise
+
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
@@ -471,7 +490,7 @@ class VotemapPlugin(Plugin):
 
     def _make_map_label(self, mapinfo):
         try:
-            gamemode_shortlabel = GAME_MODES_SHORTNAMES[mapinfo["gamemode"]]
+            gamemode_shortlabel = self.game_modes_shortnames[mapinfo["gamemode"]]
         except KeyError, err:
             self.error(err)
             gamemode_shortlabel = None
