@@ -1,11 +1,11 @@
-VoteMap Battlefield 3 for Big Brother Bot
-=========================================
+VoteMap Battlefield 3/4 for Big Brother Bot
+===========================================
 
 
 Description
 -----------
 
-This plugin brings new commands to B3 for allowing players to vote for the next map on Battlefield 3 servers.
+This plugin brings new commands to B3 for allowing players to vote for the next map on Battlefield 3 & 4 servers.
 
 .. image:: http://i.imgur.com/Wvxwa.png
    :alt: In-game screenshot
