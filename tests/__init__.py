@@ -1,5 +1,10 @@
 import sys
-from b3.parsers.bf4 import Bf4Parser
+
+try:
+	from b3.parsers.bf4 import Bf4Parser
+	has_bf4 = True
+except ImportError:
+	has_bf4 = False
 
 if sys.version_info[:2] < (2, 7):
     import unittest2 as unittest
@@ -96,6 +101,7 @@ class Bf3TestCase(unittest.TestCase):
         self.console.working = False
 
 
+@unittest.skipUnless(has_bf4, "requires BF4 support in B3")
 class Bf4TestCase(unittest.TestCase):
     """
     Test case that is suitable for testing BF4 parser specific features
