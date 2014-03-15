@@ -15,6 +15,4 @@ install:
   - pip install -e ${B3_REPO} 
 
 # command to run tests, e.g. python setup.py test 
-script: 
-  - mkdir -p /home/minion/shippable/testresults /home/minion/shippable/codecoverage ||true
-  - PYTHONPATH=extplugins nosetests --where=tests --cover-erase --with-xunit --cover-package=votemapbf3 --with-xcover --xcoverage-file=/home/minion/shippable/codecoverage/coverage.xml --xunit-file=shippable/testresults/nosetests.xml
+script: PYTHONPATH=extplugins nosetests --where=tests
